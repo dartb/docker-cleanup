@@ -93,25 +93,6 @@ do
     IFS='
  '
 
-    # Cleanup exited/dead containers
-    echo "=> Removing exited/dead containers"
-    EXITED_CONTAINERS_IDS="`docker ps -a -q -f status=exited -f status=dead | xargs echo`"
-    for CONTAINER_ID in $EXITED_CONTAINERS_IDS; do
-      CONTAINER_IMAGE=$(docker inspect --format='{{(index .Config.Image)}}' $CONTAINER_ID)
-      CONTAINER_NAME=$(docker inspect --format='{{(index .Name)}}' $CONTAINER_ID)
-      if [ $DEBUG ]; then echo "DEBUG: Check container image $CONTAINER_IMAGE named $CONTAINER_NAME"; fi
-      keepit=0
-      checkPatterns "${KEEP_CONTAINERS}" "${CONTAINER_IMAGE}" $keepit
-      keepit=$?
-      checkPatterns "${KEEP_CONTAINERS_NAMED}" "${CONTAINER_NAME}" $keepit
-      keepit=$?
-      if [[ $keepit -eq 0 ]]; then
-        echo "Removing stopped container $CONTAINER_ID"
-        docker rm -v $CONTAINER_ID
-      fi
-    done
-    unset CONTAINER_ID
-
     echo "=> Removing unused images"
 
     # Get all containers in "created" state
@@ -173,15 +154,6 @@ do
     # Wait before cleaning containers and images
     echo "=> Waiting ${DELAY_TIME} seconds before cleaning"
     sleep ${DELAY_TIME} & wait
-
-    # Remove created containers that haven't managed to start within the DELAY_TIME interval
-    rm -f CreatedContainerToClean
-    comm -12 CreatedContainerIdList <(docker ps -a -q -f status=created | sort) > CreatedContainerToClean
-    if [ -s CreatedContainerToClean ]; then
-        echo "=> Start to clean $(cat CreatedContainerToClean | wc -l) created/stuck containers"
-        if [ $DEBUG ]; then echo "DEBUG: Removing unstarted containers"; fi
-        docker rm -v $(cat CreatedContainerToClean)
-    fi
 
     # Remove images being used by containers from the delete list again. This prevents the images being pulled from deleting
     CONTAINER_ID_LIST=$(docker ps -aq --no-trunc)
