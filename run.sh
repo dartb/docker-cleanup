@@ -50,6 +50,8 @@ if [ "${KEEP_CONTAINERS}" == "**All**" ]; then
     KEEP_CONTAINERS="."
 fi
 
+KEEP_CONTAINERS="*:*"
+
 if [ "${KEEP_CONTAINERS_NAMED}" == "**None**" ]; then
     unset KEEP_CONTAINERS_NAMED
 fi
